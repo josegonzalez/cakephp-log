@@ -6,9 +6,9 @@
  *
  * - "Log" model ( empty but for a order variable [created DESC]
  * - "logs" table with these fields required :
- *		- id			[int]			:
- *		- title 		[string] 		: automagically filled with the display field of the model that was modified.
- *		- created	[date/datetime] : filled by cake in normal way
+ *     - id			[int]			:
+ *     - title 		[string] 		: automagically filled with the display field of the model that was modified.
+ * 	   - created	[date/datetime] : filled by cake in normal way
  *
  * - actsAs = array("Logable"); on models that should be logged
  *
@@ -41,11 +41,11 @@
  *
  * - In AppController (or single controller if only needed once) add these lines to beforeFilter :
  *
- *		if (sizeof($this->uses) && $this->{$this->modelClass}->Behaviors->attached('Logable')) {
+ *   	if (count($this->uses) && $this->{$this->modelClass}->Behaviors->attached('Logable')) {
  *			$this->{$this->modelClass}->setUserData($this->activeUser);
  *		}
  *
- *		Where "$activeUser" should be an array in the standard format for the User model used :
+ *   Where "$activeUser" should be an array in the standard format for the User model used :
  *
  *   $activeUser = array( $UserModel->alias => array( $UserModel->primaryKey => 123, $UserModel->displayField => 'Alexander'));
  *   // any other key is just ignored by this behaviour.
@@ -59,7 +59,8 @@
  * @version 2.2
  * @modified 3.june 2009 by Miha
  */
-class LogableBehavior extends ModelBehavior  {
+
+class LogableBehavior extends ModelBehavior {
 	var $user = null;
 	var $UserModel = false;
 	var $userIP = false;
@@ -75,17 +76,17 @@ class LogableBehavior extends ModelBehavior  {
 		'skip' => array(),
 		'ignore' => array(),
 		'classField' => 'model',
-		'foreignKey' => 'model_id'
+		'foreignKey' => 'model_id',
 	);
 
 /**
  * Cake called intializer
  * Config options are :
- *	userModel 		: 'User'. Class name of the user model you want to use (User by default), if you want to save User in log
- *	userKey   		: 'user_id'. The field for saving the user to (user_id by default).
- *	change    		: 'list' > [name, age]. Set to 'full' for [name (alek) => (Alek), age (28) => (29)]
- *	description_ids	: TRUE. Set to FALSE to not include model id and user id in the title field
- *	skip  			: array(). String array of actions to not log
+ * 	userModel 		: 'User'. Class name of the user model you want to use (User by default), if you want to save User in log
+ * 	userKey   		: 'user_id'. The field for saving the user to (user_id by default).
+ * 	change    		: 'list' > [name, age]. Set to 'full' for [name (alek) => (Alek), age (28) => (29)]
+ * 	description_ids : TRUE. Set to FALSE to not include model id and user id in the title field
+ * 	skip  			: array(). String array of actions to not log
  *
  * @param Object $Model
  * @param array $config
@@ -152,6 +153,7 @@ class LogableBehavior extends ModelBehavior  {
 		if ($params[$this->settings[$Model->alias]['classField']] === null) {
 			$params[$this->settings[$Model->alias]['classField']] = $Model->alias;
 		}
+
 		if ($params[$this->settings[$Model->alias]['classField']]) {
 			if (isset($this->Log->_schema[$this->settings[$Model->alias]['classField']])) {
 				$options['conditions'][$this->settings[$Model->alias]['classField']] = $params[$this->settings[$Model->alias]['classField']];
@@ -161,16 +163,19 @@ class LogableBehavior extends ModelBehavior  {
 				return false;
 			}
 		}
+
 		if ($params['action'] && isset($this->Log->_schema['action'])) {
 			$options['conditions']['action'] = $params['action'];
 		}
+
 		if ($params[ $this->settings[$Model->alias]['userKey'] ] && $this->UserModel && is_numeric($params[ $this->settings[$Model->alias]['userKey'] ])) {
 			$options['conditions'][$this->settings[$Model->alias]['userKey']] = $params[ $this->settings[$Model->alias]['userKey'] ];
 		}
+
 		if ($params[$this->settings[$Model->alias]['foreignKey']] && is_numeric($params[$this->settings[$Model->alias]['foreignKey']])) {
 			$options['conditions'][$this->settings[$Model->alias]['foreignKey']] = $params[$this->settings[$Model->alias]['foreignKey']];
 		}
-    	return $this->Log->find('all',$options);
+		return $this->Log->find('all', $options);
 	}
 
 /**
@@ -227,30 +232,32 @@ class LogableBehavior extends ModelBehavior  {
 			$result[$key]['Log']['event'] = $username;
 			// have all the detail models and change as list :
 			if (isset($one[$this->settings[$Model->alias]['classField']]) && isset($one['action']) && isset($one['change']) && isset($one[$this->settings[$Model->alias]['foreignKey']])) {
-				 if ($one['action'] == 'edit') {
-				 	$result[$key]['Log']['event'] .= ' edited '.$one['change'].' of '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 	//	' at '.$one['created'];
-				 } elseif ($one['action'] == 'add') {
-				 	$result[$key]['Log']['event'] .= ' added a '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 } elseif ($one['action'] == 'delete') {
-				 	$result[$key]['Log']['event'] .= ' deleted the '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 }
+				if ($one['action'] == 'edit') {
+					$result[$key]['Log']['event'] .= ' edited '.$one['change'].' of '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					// ' at '.$one['created'];
+				} elseif ($one['action'] == 'add') {
+					$result[$key]['Log']['event'] .= ' added a '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+				} elseif ($one['action'] == 'delete') {
+					$result[$key]['Log']['event'] .= ' deleted the '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+				}
 
 			} elseif ( isset($one[$this->settings[$Model->alias]['classField']]) && isset($one['action'])  && isset($one[$this->settings[$Model->alias]['foreignKey']]) ) { // have model,model_id and action
-                 if ($one['action'] == 'edit') {
-				 	$result[$key]['Log']['event'] .= ' edited '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 	//	' at '.$one['created'];
-				 } elseif ($one['action'] == 'add') {
-				 	$result[$key]['Log']['event'] .= ' added a '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 } elseif ($one['action'] == 'delete') {
-				 	$result[$key]['Log']['event'] .= ' deleted the '.low($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
-				 }
+				if ($one['action'] == 'edit') {
+					$result[$key]['Log']['event'] .= ' edited '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					// ' at '.$one['created'];
+				} elseif ($one['action'] == 'add') {
+					$result[$key]['Log']['event'] .= ' added a '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+				} elseif ($one['action'] == 'delete') {
+					$result[$key]['Log']['event'] .= ' deleted the '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+				}
 			} else { // only description field exist
-				$result[$key]['Log']['event'] = $one['description'];
+                $result[$key]['Log']['event'] = $one['description'];
 			}
+
 		}
 		return $result;
 	}
+
 /**
  * Use this to supply a model with the data of the logged in User.
  * Intended to be called in AppController::beforeFilter like this :
@@ -339,21 +346,23 @@ class LogableBehavior extends ModelBehavior  {
 			if ($this->settings[$Model->alias]['description_ids']) {
 				$logData['Log']['description'] .= ' ('.$Model->id.') ';
 			}
-			$logData['Log']['description'] .= __('deleted',true);
-		}
+			$logData['Log']['description'] .= __('deleted', true);
+		 }
 		$logData['Log']['action'] = 'delete';
 		$this->_saveLog($Model, $logData);
 	}
 
 	function beforeSave(&$Model) {
 		if (isset($this->Log->_schema['change']) && $Model->id) {
-			$this->old = $Model->find('first',array('conditions'=>array("{$Model->alias}.{$Model->primaryKey}" => $Model->id),'recursive'=>-1));
+			$this->old = $Model->find('first', array('conditions' => array(
+				$Model->alias .'.'. $Model->primaryKey => $Model->id),
+				'recursive'=>-1
+			));
 		}
 		return true;
 	}
 
 	function afterSave(&$Model,$created) {
-		$logData = array();
 		if (!$this->settings[$Model->alias]['enabled']) {
 			return true;
 		}
@@ -362,9 +371,10 @@ class LogableBehavior extends ModelBehavior  {
 		} elseif (isset($this->settings[$Model->alias]['skip']['edit']) && $this->settings[$Model->alias]['skip']['edit'] && !$created) {
 			return true;
 		}
+		$logData = array();
 		$keys = array_keys($Model->data[$Model->alias]);
-		$diff = array_diff($keys,$this->settings[$Model->alias]['ignore']);
-		if (sizeof($diff) == 0 && empty($Model->logableAction)) {
+		$diff = array_diff($keys, $this->settings[$Model->alias]['ignore']);
+		if (count($diff) == 0 && empty($Model->logableAction)) {
 			return false;
 		}
 		if ($Model->id) {
@@ -386,9 +396,9 @@ class LogableBehavior extends ModelBehavior  {
 			}
 
 			if ($created) {
-				$logData['Log']['description'] .= __('added',true);
+				$logData['Log']['description'] .= __('added', true);
 			} else {
-				$logData['Log']['description'] .= __('updated',true);
+				$logData['Log']['description'] .= __('updated', true);
 			}
 		}
 		if (isset($this->Log->_schema['action'])) {
@@ -398,17 +408,18 @@ class LogableBehavior extends ModelBehavior  {
 				$logData['Log']['action'] = 'edit';
 			}
 		}
+
 		if (isset($this->Log->_schema['change'])) {
 			$logData['Log']['change'] = '';
 			$db_fields = array_keys($Model->_schema);
 			$changed_fields = array();
 			foreach ($Model->data[$Model->alias] as $key => $value) {
-				if (isset($Model->data[$Model->alias][$Model->primaryKey])
-				&& !empty($this->old) && isset($this->old[$Model->alias][$key])) {
+				if (isset($Model->data[$Model->alias][$Model->primaryKey]) && !empty($this->old) && isset($this->old[$Model->alias][$key])) {
 					$old = $this->old[$Model->alias][$key];
 				} else {
 					$old = '';
 				}
+
 				if ($key != 'modified'
 				&& !in_array($key, $this->settings[$Model->alias]['ignore'])
 				&& $value != $old && in_array($key,$db_fields)) {
@@ -421,14 +432,14 @@ class LogableBehavior extends ModelBehavior  {
 					}
 				}
 			}
-			$changes = sizeof($changed_fields);
+			$changes = count($changed_fields);
 			if ($changes == 0) {
 				return true;
 			}
 			if ($this->settings[$Model->alias]['change'] == 'serialize') {
 				$logData['Log']['change'] = serialize($changed_fields);
 			} else {
-				$logData['Log']['change'] = implode(', ',$changed_fields);
+				$logData['Log']['change'] = implode(', ', $changed_fields);
 			}
 			$logData['Log']['changes'] = $changes;
 		}
@@ -509,10 +520,10 @@ class LogableBehavior extends ModelBehavior  {
 				// UserModel is active, but the data hasnt been set. Assume system action.
 				$logData['Log']['description'] .= ' by System';
 			}
-		$logData['Log']['description'] .= '.';
+			$logData['Log']['description'] .= '.';
 		}
 		$this->Log->create($logData);
 		$this->Log->save(null, array('validate'=>false, 'callbacks' => false));
 	}
+
 }
-?>
