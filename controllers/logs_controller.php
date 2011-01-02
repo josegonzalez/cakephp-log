@@ -4,8 +4,7 @@ class LogsController extends AppController {
 	var $helpers = array('Log.Log', 'Time');
 
 	function index() {
-		$logs = $this->Log->find('dashboard');
-		$this->set(compact('logs'));
+		$this->set('logs', $this->Log->find('dashboard'));
 	}
 }
 ?>
