@@ -10,10 +10,18 @@ class LoggingComponent extends Object {
 		if (!count($controller->uses) || get_parent_class($controller->{$controller->modelClass}) == 'Object') return;
 		if (!$controller->{$controller->modelClass}->Behaviors->attached('Logable')) return;
 
-		// Auto-import user data if Authsome component is in use
+		// Auto-import user data if AuthsomeComponent is in use
 		if (class_exists('Authsome')) {
 			if (!Authsome::get('guest')) {
 				$controller->{$controller->modelClass}->setUserData(Authsome::get());
+			}
+		}
+
+		// Auto-import user data if AuthComponent is in use
+		if (!empty($controller->Auth)) {
+			$user = $controller->Auth->user();
+			if ($user !== null) {
+				$controller->{$controller->modelClass}->setUserData(array('User' => $user));
 			}
 		}
 
