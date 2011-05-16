@@ -79,7 +79,15 @@ class LogHelper extends AppHelper {
 				$message = __('Updated by %s ', true);
 				break;
 		}
-		$user_name = (isset($user['name'])) ? $user['name'] : __('System', true);
+
+		$user_name = __('System', true);
+		$nameFields = array('name', 'username', 'full_name', 'first_name', 'last_name', 'title');
+		foreach ($nameFields as $field) {
+			if (isset($user[$field])) {
+				$user_name = $user[$field];
+				break;
+			}
+		}
 		return sprintf($message, "<span class=\"username\">{$user_name}</span>");
 	}
 
