@@ -92,7 +92,7 @@ class LogHelper extends AppHelper {
  * @author Jose Diaz-Gonzalez
  */
 	function stylize($word, $websafe = true) {
-		return "background:#{$this->colorize($word, $websafe)};color:#fff;";
+		return "background:#{$this->colorize($word, $websafe)};color:#fff;padding:2px";
 	}
 
 /**
