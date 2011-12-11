@@ -55,9 +55,10 @@
  * @co-author Ronny Vindenes
  * @co-author Carl Erik Fyllingen
  * @contributor Miha
+ * @forked by Sim Kim Sia (simkimsia in github.com)
  * @category Behavior
- * @version 2.2
- * @modified 3.june 2009 by Miha
+ * @version 2.3
+ * @modified 12 Dec 2011 by simkimsia
  */
 
 class LogableBehavior extends ModelBehavior {
@@ -294,7 +295,7 @@ class LogableBehavior extends ModelBehavior {
 	public function customLog(&$Model, $action, $id, $values = array()) {
 		$logData['Log'] = $values;
 		/** @todo clean up $logData */
-		if (isset($this->Log->_schema[$this->settings[$Model->alias]['foreignKey']]) && is_numeric($id)) {
+		if (is_numeric($id)) {
 			$logData['Log'][$this->settings[$Model->alias]['foreignKey']] = $id;
 		}
 		$title = null;
@@ -342,22 +343,22 @@ class LogableBehavior extends ModelBehavior {
 			return true;
 		}
 		$logData = array();
-		if (isset($this->Log->_schema['description'])) {
-			$logData['Log']['description'] = $Model->alias;
-			if (isset($Model->data[$Model->alias][$Model->displayField]) && $Model->displayField != $Model->primaryKey) {
-				$logData['Log']['description'] .= ' "'.$Model->data[$Model->alias][$Model->displayField].'"';
-			}
-			if ($this->settings[$Model->alias]['description_ids']) {
-				$logData['Log']['description'] .= ' ('.$Model->id.') ';
-			}
-			$logData['Log']['description'] .= __('deleted', true);
-		 }
+		
+		$logData['Log']['description'] = $Model->alias;
+		if (isset($Model->data[$Model->alias][$Model->displayField]) && $Model->displayField != $Model->primaryKey) {
+			$logData['Log']['description'] .= ' "'.$Model->data[$Model->alias][$Model->displayField].'"';
+		}
+		if ($this->settings[$Model->alias]['description_ids']) {
+			$logData['Log']['description'] .= ' ('.$Model->id.') ';
+		}
+		$logData['Log']['description'] .= __('deleted', true);
+	 
 		$logData['Log']['action'] = 'delete';
 		$this->_saveLog($Model, $logData);
 	}
 
 	public function beforeSave(&$Model) {
-		if (isset($this->Log->_schema['change']) && $Model->id) {
+		if ($Model->id) {
 			$this->old = $Model->find('first', array('conditions' => array(
 				$Model->alias .'.'. $Model->primaryKey => $Model->id),
 				'recursive'=>-1
@@ -386,67 +387,67 @@ class LogableBehavior extends ModelBehavior {
 		} elseif ($Model->insertId) {
 			$id = $Model->insertId;
 		}
-		if (isset($this->Log->_schema[$this->settings[$Model->alias]['foreignKey']])) {
-			$logData['Log'][$this->settings[$Model->alias]['foreignKey']] = $id;
+
+		$logData['Log'][$this->settings[$Model->alias]['foreignKey']] = $id;
+
+		
+		$logData['Log']['description'] = $Model->alias.' ';
+		if (isset($Model->data[$Model->alias][$Model->displayField]) && $Model->displayField != $Model->primaryKey) {
+			$logData['Log']['description'] .= '"'.$Model->data[$Model->alias][$Model->displayField].'" ';
 		}
-		if (isset($this->Log->_schema['description'])) {
-			$logData['Log']['description'] = $Model->alias.' ';
-			if (isset($Model->data[$Model->alias][$Model->displayField]) && $Model->displayField != $Model->primaryKey) {
-				$logData['Log']['description'] .= '"'.$Model->data[$Model->alias][$Model->displayField].'" ';
-			}
 
-			if ($this->settings[$Model->alias]['description_ids']) {
-				$logData['Log']['description'] .= '('.$id.') ';
-			}
+		if ($this->settings[$Model->alias]['description_ids']) {
+			$logData['Log']['description'] .= '('.$id.') ';
+		}
 
-			if ($created) {
-				$logData['Log']['description'] .= __('added', true);
+		if ($created) {
+			$logData['Log']['description'] .= __('added', true);
+		} else {
+			$logData['Log']['description'] .= __('updated', true);
+		}
+		
+		
+		if ($created) {
+			$logData['Log']['action'] = 'add';
+		} else {
+			$logData['Log']['action'] = 'edit';
+		}
+	
+
+
+		$logData['Log']['change'] = '';
+		$db_fields = array_keys($Model->_schema);
+		$changed_fields = array();
+		foreach ($Model->data[$Model->alias] as $key => $value) {
+			if (isset($Model->data[$Model->alias][$Model->primaryKey]) && !empty($this->old) && isset($this->old[$Model->alias][$key])) {
+				$old = $this->old[$Model->alias][$key];
 			} else {
-				$logData['Log']['description'] .= __('updated', true);
+				$old = '';
 			}
-		}
-		if (isset($this->Log->_schema['action'])) {
-			if ($created) {
-				$logData['Log']['action'] = 'add';
-			} else {
-				$logData['Log']['action'] = 'edit';
-			}
-		}
 
-		if (isset($this->Log->_schema['change'])) {
-			$logData['Log']['change'] = '';
-			$db_fields = array_keys($Model->_schema);
-			$changed_fields = array();
-			foreach ($Model->data[$Model->alias] as $key => $value) {
-				if (isset($Model->data[$Model->alias][$Model->primaryKey]) && !empty($this->old) && isset($this->old[$Model->alias][$key])) {
-					$old = $this->old[$Model->alias][$key];
+			if ($key != 'modified'
+			&& !in_array($key, $this->settings[$Model->alias]['ignore'])
+			&& $value != $old && in_array($key,$db_fields)) {
+				if ($this->settings[$Model->alias]['change'] == 'full') {
+					$changed_fields[] = $key . ' ('.$old.') => ('.$value.')';
+				} else if ($this->settings[$Model->alias]['change'] == 'serialize') {
+					$changed_fields[$key] =  array('old'=>$old, 'value'=>$value);
 				} else {
-					$old = '';
-				}
-
-				if ($key != 'modified'
-				&& !in_array($key, $this->settings[$Model->alias]['ignore'])
-				&& $value != $old && in_array($key,$db_fields)) {
-					if ($this->settings[$Model->alias]['change'] == 'full') {
-						$changed_fields[] = $key . ' ('.$old.') => ('.$value.')';
-					} else if ($this->settings[$Model->alias]['change'] == 'serialize') {
-						$changed_fields[$key] =  array('old'=>$old, 'value'=>$value);
-					} else {
-						$changed_fields[] = $key;
-					}
+					$changed_fields[] = $key;
 				}
 			}
-			$changes = count($changed_fields);
-			if ($changes == 0) {
-				return true;
-			}
-			if ($this->settings[$Model->alias]['change'] == 'serialize') {
-				$logData['Log']['change'] = serialize($changed_fields);
-			} else {
-				$logData['Log']['change'] = implode(', ', $changed_fields);
-			}
-			$logData['Log']['changes'] = $changes;
 		}
+		$changes = count($changed_fields);
+		if ($changes == 0) {
+			return true;
+		}
+		if ($this->settings[$Model->alias]['change'] == 'serialize') {
+			$logData['Log']['change'] = serialize($changed_fields);
+		} else {
+			$logData['Log']['change'] = implode(', ', $changed_fields);
+		}
+		$logData['Log']['changes'] = $changes;
+		
 		$this->_saveLog($Model, $logData);
 	}
 
@@ -472,12 +473,12 @@ class LogableBehavior extends ModelBehavior {
 			$logData['Log']['title'] = $Model->field($Model->displayField);
 		}
 
-		if (isset($this->Log->_schema[$this->settings[$Model->alias]['classField']])) {
-			// by miha nahtigal
-			$logData['Log'][$this->settings[$Model->alias]['classField']] = $Model->name;
-		}
+		
+		// by miha nahtigal
+		$logData['Log'][$this->settings[$Model->alias]['classField']] = $Model->name;
+		
 
-		if (isset($this->Log->_schema[$this->settings[$Model->alias]['foreignKey']]) && !isset($logData['Log'][$this->settings[$Model->alias]['foreignKey']])) {
+		if (!isset($logData['Log'][$this->settings[$Model->alias]['foreignKey']])) {
 			if ($Model->id) {
 				$logData['Log'][$this->settings[$Model->alias]['foreignKey']] = $Model->id;
 			} elseif ($Model->insertId) {
@@ -485,47 +486,45 @@ class LogableBehavior extends ModelBehavior {
 			}
 		}
 
-		if (!isset($this->Log->_schema['action'])) {
-			unset($logData['Log']['action']);
-		} elseif (isset($Model->logableAction) && !empty($Model->logableAction)) {
+		if (isset($Model->logableAction) && !empty($Model->logableAction)) {
 			$logData['Log']['action'] = implode(',',$Model->logableAction); // . ' ' . $logData['Log']['action'];
 			unset($Model->logableAction);
 		}
 
-		if (isset($this->Log->_schema['version_id']) && isset($Model->version_id)) {
+		if (isset($Model->version_id)) {
 			$logData['Log']['version_id'] = $Model->version_id;
 			unset($Model->version_id);
 		}
 
-		if (isset($this->Log->_schema['ip']) && $this->userIP) {
+		if ($this->userIP) {
 			$logData['Log']['ip'] = $this->userIP;
 		}
 
-		if (isset($this->Log->_schema['browser']) && $this->userBrowser) {
+		if ($this->userBrowser) {
 			$logData['Log']['browser'] = $this->userBrowser;
 		}
 
-		if (isset($this->Log->_schema['request']) && $this->requestParameters) {
+		if ($this->requestParameters) {
 			$logData['Log']['request'] = serialize($this->requestParameters);
 		}
 
-		if (isset($this->Log->_schema[ $this->settings[$Model->alias]['userKey'] ]) && $this->user) {
+		if ($this->user) {
 			$logData['Log'][$this->settings[$Model->alias]['userKey']] = $this->user[$this->UserModel->alias][$this->UserModel->primaryKey];
 		}
 
-		if (isset($this->Log->_schema['description'])) {
-			if ($this->user && $this->UserModel) {
-				$logData['Log']['description'] .= ' by '.$this->settings[$Model->alias]['userModel'].' "'.
-						$this->user[$this->UserModel->alias][$this->UserModel->displayField].'"';
-				if ($this->settings[$Model->alias]['description_ids']) {
-					$logData['Log']['description'] .= ' ('.$this->user[$this->UserModel->alias][$this->UserModel->primaryKey].')';
-				}
-			} else {
-				// UserModel is active, but the data hasnt been set. Assume system action.
-				$logData['Log']['description'] .= ' by System';
+
+		if ($this->user && $this->UserModel) {
+			$logData['Log']['description'] .= ' by '.$this->settings[$Model->alias]['userModel'].' "'.
+					$this->user[$this->UserModel->alias][$this->UserModel->displayField].'"';
+			if ($this->settings[$Model->alias]['description_ids']) {
+				$logData['Log']['description'] .= ' ('.$this->user[$this->UserModel->alias][$this->UserModel->primaryKey].')';
 			}
-			$logData['Log']['description'] .= '.';
+		} else {
+			// UserModel is active, but the data hasnt been set. Assume system action.
+			$logData['Log']['description'] .= ' by System';
 		}
+		$logData['Log']['description'] .= '.';
+		
 		$this->Log->create($logData);
 		$this->Log->save(null, array('validate'=>false, 'callbacks' => false));
 	}
