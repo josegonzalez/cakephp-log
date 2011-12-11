@@ -91,7 +91,7 @@ class LogableBehavior extends ModelBehavior {
  * @param Object $Model
  * @param array $config
  */
-	function setup(&$Model, $config = array()) {
+	public function setup(&$Model, $config = array()) {
 		if (!is_array($config)) {
 			$config = array();
 		}
@@ -110,11 +110,11 @@ class LogableBehavior extends ModelBehavior {
 		}
 	}
 
-	function settings(&$Model) {
+	public function settings(&$Model) {
 		return $this->settings[$Model->alias];
 	}
 
-	function enableLog(&$Model, $enable = null) {
+	public function enableLog(&$Model, $enable = null) {
 		if ($enable !== null) {
 			$this->settings[$Model->alias]['enabled'] = $enable;
 		}
@@ -141,7 +141,7 @@ class LogableBehavior extends ModelBehavior {
  * @param array $params
  * @return array
  */
-	function findLog(&$Model, $params = array()) {
+	public function findLog(&$Model, $params = array()) {
 		$defaults = array(
 			 $this->settings[$Model->alias]['classField'] => null,
 			 'action' => null,
@@ -195,7 +195,7 @@ class LogableBehavior extends ModelBehavior {
  * @param array $params
  * @return array
  */
-	function findUserActions(&$Model, $user_id, $params = array()) {
+	public function findUserActions(&$Model, $user_id, $params = array()) {
 		if (!$this->UserModel) {
 			return null;
 		}
@@ -276,7 +276,7 @@ class LogableBehavior extends ModelBehavior {
  * @param Object $Model
  * @param array $userData
  */
-	function setUserData(&$Model, $userData = null) {
+	public function setUserData(&$Model, $userData = null) {
 		if ($userData) {
 			$this->user = $userData;
 		}
@@ -291,7 +291,7 @@ class LogableBehavior extends ModelBehavior {
  * @param int $id  id of the logged item (ie model_id in logs table)
  * @param array $values optional other values for your logs table
  */
-	function customLog(&$Model, $action, $id, $values = array()) {
+	public function customLog(&$Model, $action, $id, $values = array()) {
 		$logData['Log'] = $values;
 		/** @todo clean up $logData */
 		if (isset($this->Log->_schema[$this->settings[$Model->alias]['foreignKey']]) && is_numeric($id)) {
@@ -306,23 +306,23 @@ class LogableBehavior extends ModelBehavior {
 		$this->_saveLog($Model, $logData, $title);
 	}
 
-	function clearUserData(&$Model) {
+	public function clearUserData(&$Model) {
 		$this->user = null;
 	}
 
-	function setRequestParameters(&$Model, $requestParams = array()) {
+	public function setRequestParameters(&$Model, $requestParams = array()) {
 		$this->requestParams = (array) $requestParams;
 	}
 
-	function setUserBrowser(&$Model, $userBrowser = null) {
+	public function setUserBrowser(&$Model, $userBrowser = null) {
 		$this->userBrowser = $userBrowser;
 	}
 
-	function setUserIp(&$Model, $userIP = null) {
+	public function setUserIp(&$Model, $userIP = null) {
 		$this->userIP = $userIP;
 	}
 
-	function beforeDelete(&$Model) {
+	public function beforeDelete(&$Model) {
 		if (!$this->settings[$Model->alias]['enabled']) {
 			return true;
 		}
@@ -334,7 +334,7 @@ class LogableBehavior extends ModelBehavior {
 		return true;
 	}
 
-	function afterDelete(&$Model) {
+	public function afterDelete(&$Model) {
 		if (!$this->settings[$Model->alias]['enabled']) {
 			return true;
 		}
@@ -356,7 +356,7 @@ class LogableBehavior extends ModelBehavior {
 		$this->_saveLog($Model, $logData);
 	}
 
-	function beforeSave(&$Model) {
+	public function beforeSave(&$Model) {
 		if (isset($this->Log->_schema['change']) && $Model->id) {
 			$this->old = $Model->find('first', array('conditions' => array(
 				$Model->alias .'.'. $Model->primaryKey => $Model->id),
@@ -366,7 +366,7 @@ class LogableBehavior extends ModelBehavior {
 		return true;
 	}
 
-	function afterSave(&$Model,$created) {
+	public function afterSave(&$Model,$created) {
 		if (!$this->settings[$Model->alias]['enabled']) {
 			return true;
 		}
@@ -461,7 +461,7 @@ class LogableBehavior extends ModelBehavior {
  * @param Object $Model
  * @param array $logData
  */
-	function _saveLog(&$Model, $logData, $title = null) {
+	protected function _saveLog(&$Model, $logData, $title = null) {
 		if ($title !== null) {
 			$logData['Log']['title'] = $title;
 		} elseif ($Model->displayField == $Model->primaryKey) {

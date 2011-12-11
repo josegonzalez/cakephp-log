@@ -2,3 +2,12 @@ Logable Behavior forked from https://github.com/josegonzalez/log
 
 Made compatible with Cake 2.0
 
+For a straight forward cake 2.0 conversion of the main fork, look at commit 47f43cd
+
+New stuff added in this fork:
+
+- removal of all the isset($this->Log->_schema lines.
+
+Reason for removal: these lines caused Logable Behavior not to work during saveAll operations. Unknown cause. Since removal of these lines do not, so far, cause negative consequences, the lines are removed only in those save related functions.
+
+Check commit 
