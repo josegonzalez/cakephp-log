@@ -10,4 +10,6 @@ New stuff added in this fork:
 
 Reason for removal: these lines caused Logable Behavior not to work during saveAll operations. Unknown cause. Since removal of these lines do not, so far, cause negative consequences, the lines are removed only in those save related functions.
 
-Check commit 
+Check commit 035776c
+
+- 

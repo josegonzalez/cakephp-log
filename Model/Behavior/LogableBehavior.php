@@ -68,6 +68,7 @@ class LogableBehavior extends ModelBehavior {
 	var $userBrowser = false;
 	var $requestParameters = null;
 	var $settings = array();
+	var $objectGroupKeys = array();
 	var $defaults = array(
 		'enabled' => true,
 		'userModel' => 'User',
@@ -322,6 +323,12 @@ class LogableBehavior extends ModelBehavior {
 	public function setUserIp(&$Model, $userIP = null) {
 		$this->userIP = $userIP;
 	}
+	
+	public function setObjectGroupKeys(&$Model, $objectGroupKey = null) {
+		if (!in_array($objectGroupKey, $this->objectGroupKeys)) {
+			$this->objectGroupKeys[] = $objectGroupKey;
+		}
+	}
 
 	public function beforeDelete(&$Model) {
 		if (!$this->settings[$Model->alias]['enabled']) {
@@ -412,8 +419,11 @@ class LogableBehavior extends ModelBehavior {
 		} else {
 			$logData['Log']['action'] = 'edit';
 		}
-	
-
+		
+		// add in the objectGroupKey if need be
+		foreach ($this->objectGroupKeys as $groupKey) {
+			$logData['Log'][$groupKey] = $Model->data[$Model->alias][$groupKey];
+		}
 
 		$logData['Log']['change'] = '';
 		$db_fields = array_keys($Model->_schema);
