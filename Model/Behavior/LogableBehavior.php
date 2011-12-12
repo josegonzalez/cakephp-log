@@ -422,7 +422,9 @@ class LogableBehavior extends ModelBehavior {
 		
 		// add in the objectGroupKey if need be
 		foreach ($this->objectGroupKeys as $groupKey) {
-			$logData['Log'][$groupKey] = $Model->data[$Model->alias][$groupKey];
+			if (isset($Model->data[$Model->alias][$groupKey])) {
+				$logData['Log'][$groupKey] = $Model->data[$Model->alias][$groupKey];				
+			}
 		}
 
 		$logData['Log']['change'] = '';
