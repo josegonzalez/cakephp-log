@@ -2,7 +2,10 @@
 class Log extends LogAppModel {
 	var $name = 'Log';
 	var $order = 'Log.created DESC';
-	var $_findMethods = array('dashboard' => true);
+	var $findMethods = array('dashboard' => true);
+	
+	// we need to explicitly set this in order for the find methods to work
+	var $belongsTo = array('User');
 
 	function _findDashboard($state, $query, $results = array()) {
 		if ($state == 'before') {
