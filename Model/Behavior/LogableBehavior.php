@@ -279,21 +279,11 @@ class LogableBehavior extends ModelBehavior {
 	 * @param array $params
 	 * @return array
 	 */
-		public function findObjectGroupActions(&$Model, $user_id, $params = array()) {
-			if (!$this->UserModel) {
+		public function findObjectGroupActions(&$Model, $objectGroupKeyValue = array(), $params = array()) {
+			if (empty($objectGroupKeyValue) || !is_array($objectGroupKeyValue)) {
 				return null;
 			}
-			// if logged in user is asking for her own log, use the data we allready have
-			if (isset($this->user)
-				 && isset($this->user[$this->UserModel->alias][$this->UserModel->primaryKey])
-				 && $user_id == $this->user[$this->UserModel->alias][$this->UserModel->primaryKey]
-				 && isset($this->user[$this->UserModel->alias][$this->UserModel->displayField]) ) {
-				$username = $this->user[$this->UserModel->alias][$this->UserModel->displayField];
-			} else {
-				$this->UserModel->recursive = -1;
-				$user = $this->UserModel->find(array($this->UserModel->primaryKey => $user_id));
-				$username = $user[$this->UserModel->alias][$this->UserModel->displayField];
-			}
+
 			$fields = array();
 			if (isset($params['fields'])) {
 				if (is_array($params['fields'])) {
@@ -302,7 +292,9 @@ class LogableBehavior extends ModelBehavior {
 					$fields = array($params['fields']);
 				}
 			}
-			$conditions = array($this->settings[$Model->alias]['userKey'] => $user_id);
+			
+			// since we are looking based on objectGroupKeyValue, conditions should start with that.
+			$conditions = $objectGroupKeyValue;
 			if (isset($params[$this->settings[$Model->alias]['classField']])) {
 				$conditions[$this->settings[$Model->alias]['classField']] = $params[$this->settings[$Model->alias]['classField']];
 			}
