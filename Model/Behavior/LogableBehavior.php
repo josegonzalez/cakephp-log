@@ -69,6 +69,7 @@ class LogableBehavior extends ModelBehavior {
 	var $requestParameters = null;
 	var $settings = array();
 	var $objectGroupKeys = array();
+	var $userGroupKeys	= array();
 	var $defaults = array(
 		'enabled' => true,
 		'userModel' => 'User',
@@ -417,6 +418,12 @@ class LogableBehavior extends ModelBehavior {
 			$this->objectGroupKeys[] = $objectGroupKey;
 		}
 	}
+	
+	public function setUserGroupKeys(&$Model, $userGroupKey = null) {
+		if (!in_array($userGroupKey, $this->userGroupKeys)) {
+			$this->userGroupKeys[] = $userGroupKey;
+		}
+	}
 
 	public function beforeDelete(&$Model) {
 		if (!$this->settings[$Model->alias]['enabled']) {
@@ -514,6 +521,14 @@ class LogableBehavior extends ModelBehavior {
 				$logData['Log'][$groupKey] = $Model->data[$Model->alias][$groupKey];				
 			}
 		}
+
+		// add in the userGroupKey if need be
+		foreach ($this->userGroupKeys as $groupKey) {
+			if (isset($Model->data[$Model->alias][$groupKey])) {
+				$logData['Log'][$groupKey] = $Model->data[$Model->alias][$groupKey];				
+			}
+		}
+
 
 		$logData['Log']['change'] = '';
 		$db_fields = array_keys($Model->_schema);
