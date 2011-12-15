@@ -1,6 +1,6 @@
 <?php 
 /* Logs schema generated on: 2011-05-09 05:23:46 : 1304918626*/
-class LogsSchema extends CakeSchema {
+class LogSchema extends CakeSchema {
 	var $name = 'Logs';
 
 	function before($event = array()) {
