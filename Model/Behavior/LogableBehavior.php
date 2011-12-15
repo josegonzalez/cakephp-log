@@ -264,6 +264,88 @@ class LogableBehavior extends ModelBehavior {
 		return $result;
 	}
 
+
+	/**
+	 * Get list of actions done on objects belonging to same object group.
+	 * Params for getting (one line) activity descriptions
+	 * and/or for just one model
+	 *
+	 * @example $this->Model->findUserActions(301,array('model' => 'BookTest'));
+	 * @example $this->Model->findUserActions(301,array('events' => true));
+	 * @example $this->Model->findUserActions(301,array('fields' => array('id','model'),'model' => 'BookTest');
+	 * @param Object $Model
+	 * @param int $user_id
+	 * @param array $params
+	 * @return array
+	 */
+		public function findObjectGroupActions(&$Model, $user_id, $params = array()) {
+			if (!$this->UserModel) {
+				return null;
+			}
+			// if logged in user is asking for her own log, use the data we allready have
+			if (isset($this->user)
+				 && isset($this->user[$this->UserModel->alias][$this->UserModel->primaryKey])
+				 && $user_id == $this->user[$this->UserModel->alias][$this->UserModel->primaryKey]
+				 && isset($this->user[$this->UserModel->alias][$this->UserModel->displayField]) ) {
+				$username = $this->user[$this->UserModel->alias][$this->UserModel->displayField];
+			} else {
+				$this->UserModel->recursive = -1;
+				$user = $this->UserModel->find(array($this->UserModel->primaryKey => $user_id));
+				$username = $user[$this->UserModel->alias][$this->UserModel->displayField];
+			}
+			$fields = array();
+			if (isset($params['fields'])) {
+				if (is_array($params['fields'])) {
+					$fields = $params['fields'];
+				} else {
+					$fields = array($params['fields']);
+				}
+			}
+			$conditions = array($this->settings[$Model->alias]['userKey'] => $user_id);
+			if (isset($params[$this->settings[$Model->alias]['classField']])) {
+				$conditions[$this->settings[$Model->alias]['classField']] = $params[$this->settings[$Model->alias]['classField']];
+			}
+			$data = $this->Log->find('all', array(
+				'conditions' => $conditions,
+				'recursive' => -1,
+				'fields' => $fields
+			));
+			if (! isset($params['events']) || (isset($params['events']) && $params['events'] == false)) {
+				return $data;
+			}
+			$result = array();
+			foreach ($data as $key => $row) {$one = $row['Log'];
+				$result[$key]['Log']['id'] = $one['id'];
+				$result[$key]['Log']['event'] = $username;
+				// have all the detail models and change as list :
+				if (isset($one[$this->settings[$Model->alias]['classField']]) && isset($one['action']) && isset($one['change']) && isset($one[$this->settings[$Model->alias]['foreignKey']])) {
+					if ($one['action'] == 'edit') {
+						$result[$key]['Log']['event'] .= ' edited '.$one['change'].' of '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+						// ' at '.$one['created'];
+					} elseif ($one['action'] == 'add') {
+						$result[$key]['Log']['event'] .= ' added a '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					} elseif ($one['action'] == 'delete') {
+						$result[$key]['Log']['event'] .= ' deleted the '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					}
+
+				} elseif ( isset($one[$this->settings[$Model->alias]['classField']]) && isset($one['action'])  && isset($one[$this->settings[$Model->alias]['foreignKey']]) ) { // have model,model_id and action
+					if ($one['action'] == 'edit') {
+						$result[$key]['Log']['event'] .= ' edited '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+						// ' at '.$one['created'];
+					} elseif ($one['action'] == 'add') {
+						$result[$key]['Log']['event'] .= ' added a '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					} elseif ($one['action'] == 'delete') {
+						$result[$key]['Log']['event'] .= ' deleted the '.strtolower($one[$this->settings[$Model->alias]['classField']]).'(id '.$one[$this->settings[$Model->alias]['foreignKey']].')';
+					}
+				} else { // only description field exist
+	                $result[$key]['Log']['event'] = $one['description'];
+				}
+
+			}
+			return $result;
+		}
+
+
 /**
  * Use this to supply a model with the data of the logged in User.
  * Intended to be called in AppController::beforeFilter like this :
@@ -304,6 +386,12 @@ class LogableBehavior extends ModelBehavior {
 			$title = $values['title'];
 			unset($logData['Log']['title']);
 		}
+		
+		// we need to set a default triggered_by as custom when customLog is used
+		if (empty($values['triggered_by'])) {
+			$values['triggered_by'] = 'as customLog';
+		}
+		
 		$logData['Log']['action'] = $action;
 		$this->_saveLog($Model, $logData, $title);
 	}
