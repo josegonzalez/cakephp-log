@@ -1,0 +1,9 @@
+*.kpf
+/mainsite/tmp
+.idea
+pmip
+*.tmproj
+app/tmp/cache/cake*
+.DS_Store
+*.DS_Store
+tags

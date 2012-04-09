@@ -39,13 +39,18 @@ class LogHelper extends AppHelper {
  * @return void
  * @author Jose Diaz-Gonzalez
  **/
-	function logTitle($log) {
-		return $this->Html->link($log['title'], array(
+	function logTitle($log, $extraParams = array()) {
+		
+		$defaultRouteParams = array(
 			'plugin' => false,
 			'controller' => Inflector::tableize($log['model']),
 			'action' => 'view',
 			'id' => $log['model_id']
-		));
+		);
+		
+		$finalRouteParams = array_merge($defaultRouteParams, $extraParams);
+		
+		return $this->Html->link($log['title'], $finalRouteParams);
 	}
 
 /**
@@ -157,6 +162,52 @@ class LogHelper extends AppHelper {
 			}
 		}
  		return $rgb[0].$rgb[1].$rgb[2];
+	}
+	
+	/**
+	*
+	* extra Helper methods to display specific messages
+	**/
+	function logAt($log) {
+		
+		$user_name = (isset($log['User']['name'])) ? $log['User']['name'] : __('System');
+		return 'at ' . $this->Time->format('h:i a', $log['Log']['created']) . ' ' . __('by') . ' ' . $user_name;
+	}
+	
+	function logAtWhatTime($log) {
+		return $this->Time->format('h:i a', $log['Log']['created']);
+	}
+	
+	function logByWhom($log, $userDisplayField='') {
+		if (empty($userDisplayField)) {
+			$user = ClassRegistry::init('User');
+			$userDisplayField = $user->displayField;
+		}
+		
+		// the assumption is that the user model is User. which i think is a pretty good assumption
+		// given that we use cakephp
+		return $log['User'][$userDisplayField];
+		
+	}
+	
+	/**
+	*
+	* extra Helper methods to display specific messages for specific actions
+	*
+	**/
+	function logAction($log) {
+		switch ($log['action']) {
+			case 'add' :
+				$message = __('created');
+				break;
+			case 'delete' :
+				$message = __('deleted');
+				break;
+			default :
+				$message = __('updated');
+				break;
+		}
+		return $message;
 	}
 }
 ?>

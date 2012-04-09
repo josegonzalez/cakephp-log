@@ -1,0 +1,27 @@
+Logable Behavior forked from https://github.com/josegonzalez/log
+
+Made compatible with Cake 2.0
+
+For a straight forward cake 2.0 conversion of the main fork, look at commit 47f43cd
+
+New stuff added in this fork:
+
+- removal of all the isset($this->Log->_schema lines.
+
+Reason for removal: these lines caused Logable Behavior not to work during saveAll operations. Unknown cause. Since removal of these lines do not, so far, cause negative consequences, the lines are removed only in those save related functions. e.g., all the callbacks like beforeSave, afterSave, etc and _saveLog protected function
+
+Check commit 035776c
+
+- add in a objectGroupKeys to allow flexibility for saving
+
+Reason for addition: 
+
+All logs are in the form of "User did an action with regards to an object"
+By default, model_id contains the primary key of the object
+user_id contains the primary key of the user
+action contains the said action.
+
+We need to have 1 or more extra keys with regards to the object. For e.g., an account_id field so that when we display the logs, we only display those activities associated with a particular account.
+
+
+Check commit 5419e82
